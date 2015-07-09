@@ -10,7 +10,8 @@ output:
 
 The following libraries will be used to complete this analysis:
 
-```{r libraries,message=FALSE}
+
+```r
 library(dplyr)
 library(lubridate)
 library(ggplot2)
@@ -20,7 +21,8 @@ We begin by loading the tracker data. This data is in a clean CSV, and we load i
 straight from the compressed data file provided. We also parse the dates into proper
 dates at this point.
 
-```{r load_data}
+
+```r
 data <- read.csv(unz("activity.zip", "activity.csv"), stringsAsFactors = FALSE)
 data$date <- ymd(data$date)
 ```
@@ -36,7 +38,8 @@ likely to perturn the final result.
 We compute a basic data frame of days to steps-per-day, and show what the data look like in 
 a histogram. We also compute the median and the mean.
 
-```{r steps_per_day}
+
+```r
 # Function to compute steps-per-day aggregate
 aggregateStepsPerDay <- function(raw_data) {
     raw_data %>% 
@@ -58,9 +61,11 @@ ggplot(data = steps_per_day, aes(x=steps)) + geom_histogram(binwidth = 2000) +
     labs(title = "Histogram of Distribution of Steps Taken Per Day")
 ```
 
+![plot of chunk steps_per_day](figure/steps_per_day-1.png) 
+
 The median and mean are:
-- Mean steps per day: `r format(mean_steps_per_day, scientific=FALSE)`
-- Median steps per day: `r format(median_steps_per_day, scientific=FALSE)`
+- Mean steps per day: 9354.23
+- Median steps per day: 10395
 
 
 
@@ -69,7 +74,8 @@ The median and mean are:
 We now compute the average activity pattern across all days, by interval. This will show, on average,
 at what time of the day our subject is most active.
 
-```{r average_daily_activity_pattern}
+
+```r
 # Compute average steps per interval
 avg_steps_per_interval <- data %>% 
                          select(interval, steps) %>% 
@@ -86,7 +92,9 @@ ggplot(data = avg_steps_per_interval, aes(interval, steps)) + geom_line() +
     labs(title = "Average Activity Over Time Intervals")
 ```
 
-The interval with the max activity is `r max_avg_activity_interval`, with `r format(max_avg_activity_interval_value, digits=5)` steps.
+![plot of chunk average_daily_activity_pattern](figure/average_daily_activity_pattern-1.png) 
+
+The interval with the max activity is 835, with 206.17 steps.
 
 
 ## Imputing missing values
@@ -94,12 +102,13 @@ The interval with the max activity is `r max_avg_activity_interval`, with `r for
 There are a number of missing values in the data set. In this section, we look into the situation, and see how robust our 
 previous analysis was, where we ignored all missing values.
 
-The data set contains `r sum(is.na(data$steps))` missing values.
+The data set contains 2304 missing values.
 
 We will impute the missing values by substituting in the mean for that 5-minute interval, which we've 
 already calculated above.
 
-```{r impute_missing}
+
+```r
 # Impute the values, as follows:
 # 1) Left-join with the average steps per interval data, on interval. This will split "steps" into 
 #    "steps.x" and "steps.y"
@@ -113,7 +122,8 @@ imputed_data <- left_join(data, avg_steps_per_interval, by = "interval") %>%
 
 Now, recalculate the total steps per day, along with the mean and median, so we can compare to the old results.
 
-```{r imputed_steps_per_day}
+
+```r
 # Compute number of steps per day.
 imputed_steps_per_day <- aggregateStepsPerDay(imputed_data)
 
@@ -127,20 +137,23 @@ ggplot(data = imputed_steps_per_day, aes(x=steps)) + geom_histogram(binwidth = 2
     labs(title = "Histogram of Distribution of Steps Taken Per Day (with imputed missing values)")
 ```
 
+![plot of chunk imputed_steps_per_day](figure/imputed_steps_per_day-1.png) 
+
 The new median and mean are:
-- Imputed mean steps per day: `r format(imputed_mean_steps_per_day, scientific=FALSE)`
-- Imputed median steps per day: `r format(imputed_median_steps_per_day, scientific=FALSE)`
+- Imputed mean steps per day: 10766.19
+- Imputed median steps per day: 10766.19
 
 Recall the original values, for comparison:
-- Original mean steps per day (from earlier): `r format(mean_steps_per_day, scientific=FALSE)`
-- Original median steps per day (from earlier): `r format(median_steps_per_day, scientific=FALSE)`
+- Original mean steps per day (from earlier): 9354.23
+- Original median steps per day (from earlier): 10395
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
 To separate out weekends from weekdays, we add a factor to represent whether the day in question is a weekday.
 
-```{r weekday_factor}
+
+```r
 weekdayFactor <- function(date) {
     as.factor(
         ifelse(
@@ -157,7 +170,8 @@ imputed_data$weekday <- weekdayFactor(imputed_data$date)
 To quickly visualize the differences (if any) between weekday and weekend activity, we plot average activity 
 across all days, for each interval, split by weekday/weekend levels.
 
-```{r average_daily_activity_pattern_weekday_weekend}
+
+```r
 # Compute average steps per interval, by weekday
 weekday_avg_steps_per_interval <- imputed_data %>% 
                                   select(interval, weekday, steps) %>% 
@@ -170,5 +184,7 @@ ggplot(data = weekday_avg_steps_per_interval, aes(interval, steps)) + geom_line(
     labs(x = "5-Minute Time Interval", y = "Average Activity (steps)") +
     labs(title = "Average Activity Over Time Intervals")
 ```
+
+![plot of chunk average_daily_activity_pattern_weekday_weekend](figure/average_daily_activity_pattern_weekday_weekend-1.png) 
 
 
